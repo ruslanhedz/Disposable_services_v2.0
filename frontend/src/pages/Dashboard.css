@@ -1,0 +1,108 @@
+.dashboard-container {
+    padding: 20px;
+    background-color: #121212;
+    color: #fff;
+    min-height: 100vh;
+}
+
+.dashboard-title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr; /* Left column smaller, right column wider */
+    gap: 20px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dashboard-card {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.dashboard-card h2 {
+    margin-bottom: 15px;
+}
+
+.session-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.session-buttons button {
+    padding: 10px;
+    font-size: 1rem;
+    background: transparent;
+    color: #fff;
+    border: 2px solid #4fc3f7;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.session-buttons button:hover {
+    background: #4fc3f7;
+    color: #121212;
+}
+
+.session-list {
+    list-style: none;
+    padding: 0;
+    font-size: 0.95rem;
+}
+
+.session-list li {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.session-window .preview-box {
+    background: #222;
+    height: 400px; /* Increased height for bigger preview */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid #444;
+    font-size: 1.4rem;
+}
+
+.preview-box.empty {
+    color: #888;
+}
+
+.Chrome-logo {
+    width: auto;
+    height: 100px;
+}
+
+.Firefox-logo {
+    width: auto;
+    height: 100px;
+}
+
+.Windows-logo {
+    width: auto;
+    height: 100px;
+}
+
+.Ubuntu-logo {
+    width: auto;
+    height: 100px;
+}
+
+.Fedora-logo {
+    width: auto;
+    height: 100px;
+}

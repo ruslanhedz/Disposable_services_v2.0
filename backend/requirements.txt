@@ -1,0 +1,8 @@
+django
+djangorestframework
+django_rest_auth
+django-allauth
+mysqlclient
+python-decouple
+python-dotenv
+django-cors-headers
