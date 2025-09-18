@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 import Chrome_logo from '../../public/Chrome.svg';
 import Firefox_logo from '../../public/Firefox.svg';
@@ -9,6 +10,45 @@ import Fedora_logo from '../../public/Fedora.svg';
 
 function Dashboard() {
     const [selectedSession, setSelectedSession] = useState(null);
+    const navigate = useNavigate();
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        console.log(cookieValue);
+        return cookieValue;
+    }
+
+    const handleLogout = async () => {
+        try {
+            const response = await fetch("http://localhost:8000/logout/", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"), // must not be null
+                },
+            });
+
+            if (response.ok) {
+                navigate("/");
+            } else {
+                alert("Logout failed");
+            }
+        } catch (error) {
+            alert("Logout failed");
+            console.error(error);
+        }
+    };
 
     return (
         <div className="dashboard-container">
@@ -45,6 +85,12 @@ function Dashboard() {
                         <div className="preview-box empty">No session selected</div>
                     )}
                 </div>
+            </div>
+
+            <div className="logout-footer">
+                <button className="logout-button" onClick={handleLogout}>
+                    Log Out
+                </button>
             </div>
         </div>
     );
