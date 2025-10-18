@@ -6,3 +6,5 @@ mysqlclient
 python-decouple
 python-dotenv
 django-cors-headers
+pycryptodome
+requests

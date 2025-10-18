@@ -13,7 +13,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from .serializers import UserSerializer
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 
 
 class SignUpView(generics.CreateAPIView):

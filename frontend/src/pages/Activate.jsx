@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import "./Auth.css";
 
+import { BASE_URL } from "../api"
+
 function ActivateAccount() {
     const { uid, token } = useParams();
     const [status, setStatus] = useState("loading"); // loading | success | error
@@ -11,7 +13,7 @@ function ActivateAccount() {
         const activate = async () => {
             try {
                 const response = await fetch(
-                    `http://localhost:8000/activate/${uid}/${token}/`
+                    `${BASE_URL}/activate/${uid}/${token}/`
                 );
 
                 if (response.ok) {

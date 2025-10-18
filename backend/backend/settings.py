@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'dj_rest_auth.registration',
     'reg_log',
+    'session_manager',
 ]
 
 MIDDLEWARE = [
@@ -115,11 +116,20 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DATABASE_HOST'),
         'PORT': os.getenv('DATABASE_PORT'),
+    },
+    'sessions': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_SESSIONS_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT'),
     }
 }
 
 DATABASE_ROUTERS = [
     'backend.routers.RegLogRouter',
+    'backend.routers.SessionsRouter',
 ]
 
 
@@ -182,3 +192,7 @@ SESSION_COOKIE_SECURE = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 1800
 SESSIO_SAVE_EVERY_REQUEST = True
+
+guacamole_key = os.getenv('GUACAMOLE_KEY')
+guacamole_url = os.getenv('GUACAMOLE_URL')
+guacamole_ws = os.getenv('GUACAMOLE_WS')

@@ -2,6 +2,8 @@ import {useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
+import { BASE_URL } from '../api'
+
 function Login() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
@@ -15,7 +17,7 @@ function Login() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch("http://localhost:8000/auth/status/", {
+                const res = await fetch(`${BASE_URL}/auth/status/`, {
                     credentials: "include",
                 });
 
@@ -41,7 +43,7 @@ function Login() {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:8000/login/", {
+            const response = await fetch(`${BASE_URL}/login/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json"},
                 body: JSON.stringify({
