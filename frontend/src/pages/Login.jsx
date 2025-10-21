@@ -17,7 +17,7 @@ function Login() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch(`${BASE_URL}/auth/status/`, {
+                const res = await fetch(`/api/auth/status/`, {
                     credentials: "include",
                 });
 
@@ -43,7 +43,7 @@ function Login() {
         e.preventDefault();
 
         try {
-            const response = await fetch(`${BASE_URL}/login/`, {
+            const response = await fetch(`/api/login/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json"},
                 body: JSON.stringify({

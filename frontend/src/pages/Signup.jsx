@@ -19,7 +19,7 @@ function Signup() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch(`${BASE_URL}/auth/status/`, {
+                const res = await fetch(`/api/auth/status/`, {
                     credentials: "include",
                 });
 
@@ -66,7 +66,7 @@ function Signup() {
         console.log(form);
 
         try {
-            const response = await fetch(`${BASE_URL}/signup/`, {
+            const response = await fetch(`/api/signup/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

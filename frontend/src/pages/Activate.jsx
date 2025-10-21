@@ -13,7 +13,7 @@ function ActivateAccount() {
         const activate = async () => {
             try {
                 const response = await fetch(
-                    `${BASE_URL}/activate/${uid}/${token}/`
+                    `/api/activate/${uid}/${token}/`
                 );
 
                 if (response.ok) {

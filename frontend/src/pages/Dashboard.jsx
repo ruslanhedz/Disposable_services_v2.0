@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Guacamole from 'guacamole-common-js'
 import './Dashboard.css';
 import Chrome_logo from '../../public/Chrome.svg';
 import Firefox_logo from '../../public/Firefox.svg';
@@ -15,6 +16,9 @@ function Dashboard() {
     const [sessionUrl, setSessionUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const guacContainerRef = useRef(null);
+    const guacClientRef = useRef(null);
+
 
     function getCookie(name) {
         let cookieValue = null;
@@ -38,7 +42,7 @@ function Dashboard() {
         setSessionUrl(null);
 
         try {
-            const responce = await fetch(`${BASE_URL}/new_session/`, {
+            const responce = await fetch(`/api/new_session/`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -48,9 +52,9 @@ function Dashboard() {
             });
 
             if (responce.ok) {
-                const session_url = await responce.json();
-                console.log(session_url);
-                setSessionUrl(session_url);
+                const data = await responce.json();
+                //console.log(session_url);
+                setSessionUrl(data.ws_url);
             } else {
                 const errorText = await responce.text();
                 alert(`Failed to create session: ${errorText}`);
@@ -63,6 +67,70 @@ function Dashboard() {
         }
     };
 
+    useEffect(() => {
+        console.log("useEffect triggered, sessionUrl =", sessionUrl);
+        if (!sessionUrl) return;
+
+        console.log("Creating Guacamole tunnel to:", sessionUrl);
+
+        const tunnel = new Guacamole.WebSocketTunnel(sessionUrl);
+        const client = new Guacamole.Client(tunnel);
+
+        const display = client.getDisplay().getElement();
+        const container = guacContainerRef.current;
+
+        container.innerHTML = "";
+        container.appendChild(display);
+        guacClientRef.current = client;
+
+
+        display.style.width = "100%";
+        display.style.height = "100%";
+        display.style.outline = "none";
+        display.tabIndex = 1;
+
+
+        const mouse = new Guacamole.Mouse(client.getDisplay().getElement());
+        mouse.onEach = (state) => client.sendMouseState(state);
+
+// For scaled / touch input:
+        const touch = new Guacamole.Touch(client.getDisplay().getElement());
+        touch.onEach = (state) => client.sendTouchState(state);
+
+        const keyboard = new Guacamole.Keyboard(document);
+        keyboard.onkeydown = (keysym) => client.sendKeyEvent(1, keysym);
+        keyboard.onkeyup = (keysym) => client.sendKeyEvent(0, keysym);
+
+        // display.setAttribute("tabIndex", "-1");
+        // display.style.outline = "none"; // Hides the blue focus ring
+        // display.focus();
+
+        display.addEventListener("mousedown", () => {
+            display.focus();
+        });
+        setTimeout(() => display.focus(), 500);
+
+        client.getDisplay().scale(1); // Ensure 1:1 mapping of coords
+
+        client.connect("");
+
+        client.onstatechange = (state) => {
+            console.log("Guacamole state:", state);
+        };
+
+        // client.onstatechange = (state) => {
+        //     console.log("Guac state:", state);
+        //     if (state === 3) { // CONNECTED
+        //         client.sendMessage("select", "Browser"); // safe now
+        //     }
+        // };
+
+        return () => {
+            console.log("Closing Guac client...");
+            keyboard.reset();
+            client.disconnect();
+        };
+    }, [sessionUrl]);
 
     const handleLogout = async () => {
         try {
@@ -116,22 +184,45 @@ function Dashboard() {
                 </div>
 
 
+                {/*<div className="dashboard-card session-window">*/}
+                {/*    <h2>Session Preview</h2>*/}
+                {/*    {loading ? (*/}
+                {/*        <div className="preview-box">Starting Chrome session...</div>*/}
+                {/*    ) : sessionUrl ? (*/}
+                {/*        <div*/}
+                {/*            id="guac-display"*/}
+                {/*            ref={guacContainerRef}*/}
+                {/*            className="preview-box"*/}
+                {/*            style={{ width: "100%", height: "600px", background: "#000" }}*/}
+                {/*        ></div>*/}
+                {/*    ) : (*/}
+                {/*        <div className="preview-box empty">No session selected</div>*/}
+                {/*    )}*/}
+                {/*</div>*/}
+
                 <div className="dashboard-card session-window">
-                    <h2>Session Preview</h2>
-                    {loading ? (
-                        <div className="preview-box">Starting Chrome session...</div>
-                    ) : sessionUrl ? (
-                        <iframe
-                            src={sessionUrl}
-                            title="Chrome Session"
-                            className="preview-iframe"
-                        ></iframe>
-                    ) : selectedSession ? (
-                        <div className="preview-box">You selected: {selectedSession}</div>
-                    ) : (
-                        <div className="preview-box empty">No session selected</div>
-                    )}
+                    <h2 style={{ zIndex: 1, position: "relative" }}>Session Preview</h2>
+                    <div className="preview-container">
+                        {loading ? (
+                            <div className="preview-box">Starting Chrome session...</div>
+                        ) : sessionUrl ? (
+                            <div
+                                id="guac-display"
+                                ref={guacContainerRef}
+                                style={{
+                                    width: "100%",
+                                    height: "600px",
+                                    background: "#000",
+                                    position: "relative",
+                                    zIndex: 10,
+                                }}
+                            ></div>
+                        ) : (
+                            <div className="preview-box empty">No session selected</div>
+                        )}
+                    </div>
                 </div>
+
             </div>
 
 

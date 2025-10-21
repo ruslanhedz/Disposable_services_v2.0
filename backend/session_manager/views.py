@@ -22,16 +22,16 @@ class CreateBrowserSessionView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            result = subprocess.run(
-                ["powershell", "-Command", "VBoxManage startvm \"Ubuntu server Browser session\" --type gui"],
-                capture_output=True,
-                text=True
-            )
-
-            if result.returncode != 0:
-                raise Exception("VBoxManage startvm failed")
-
-            time.sleep(60)
+            # result = subprocess.run(
+            #     ["powershell", "-Command", "VBoxManage startvm \"Ubuntu server Browser session\" --type gui"],
+            #     capture_output=True,
+            #     text=True
+            # )
+            #
+            # if result.returncode != 0:
+            #     raise Exception("VBoxManage startvm failed")
+            #
+            # time.sleep(100)
 
             key = bytes.fromhex(guacamole_key)
             iv = bytes(16)
@@ -80,6 +80,8 @@ class CreateBrowserSessionView(APIView):
 
             response = requests.post(guacamole_tokens, data=payload, headers=headers)
 
+            print(response.json())
+
             authToken = response.json().get("authToken")
 
             expire_time = datetime.now(timezone.utc) + timedelta(minutes=15)
@@ -88,7 +90,7 @@ class CreateBrowserSessionView(APIView):
                 "session_type": "browser",
                 "machine_address": "192.168.1.8",
                 "dispose_time": expire_time,
-                "token": authToken,
+                "token": token,
                 "user": request.user.id
             }
 
@@ -97,9 +99,16 @@ class CreateBrowserSessionView(APIView):
             if not serializer.is_valid():
                 return Response(serializer.errors, status=400)
 
-            session_url = guacamole_url + "/?token=" + authToken
+            session_url = (f"ws://localhost:8080/guacamole/websocket-tunnel?"
+                           f"token={authToken}"
+                           f"&GUAC_ID=Browser"
+                           f"&GUAC_TYPE=c"
+                           f"&GUAC_DATA_SOURCE=json"
+                           f"&dummy=ignore")
 
-            return Response(session_url, status=200)
+            print(f"session url: {session_url}")
+
+            return Response({"ws_url": session_url}, status=200)
 
         except Exception as e:
             return Response(str(e), status=500)

@@ -1,3 +1,4 @@
+/* === Layout & Typography === */
 .dashboard-container {
     padding: 20px;
     background-color: #121212;
@@ -23,6 +24,7 @@
     gap: 20px;
 }
 
+/* === Card Styling === */
 .dashboard-card {
     background: #1e1e1e;
     padding: 20px;
@@ -30,10 +32,19 @@
     border: 1px solid #333;
 }
 
-.dashboard-card h2 {
-    margin-bottom: 15px;
+.dashboard-card.session-window {
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
+.dashboard-card h2 {
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1; /* Ensure the title doesn’t overlap the display */
+}
+
+/* === Session Creation Buttons === */
 .session-buttons {
     display: flex;
     flex-direction: column;
@@ -56,6 +67,7 @@
     color: #121212;
 }
 
+/* === Session List === */
 .session-list {
     list-style: none;
     padding: 0;
@@ -67,44 +79,65 @@
     border-bottom: 1px solid #333;
 }
 
+/* === Session Preview Area === */
 .session-window .preview-box {
-    background: #222;
-    height: 400px; /* Increased height for bigger preview */
+    position: relative;
+    z-index: 2; /* Above card background */
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.4rem;
     border-radius: 6px;
     border: 1px solid #444;
-    font-size: 1.4rem;
+    height: 600px;
+    width: 100%;
+    background: #000;
+    pointer-events: auto !important; /* Allow all clicks */
+    overflow: hidden;
 }
 
+/* Ensure Guacamole display and canvas are interactive */
+#guac-display,
+#guac-display * {
+    position: relative;
+    z-index: 3 !important;
+    pointer-events: auto !important;
+}
+
+#guac-display canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+#guac-display {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: visible !important;
+}
+
+/* Empty session preview placeholder */
 .preview-box.empty {
     color: #888;
+    pointer-events: auto;
 }
 
-.Chrome-logo {
-    width: auto;
-    height: 100px;
-}
-
-.Firefox-logo {
-    width: auto;
-    height: 100px;
-}
-
-.Windows-logo {
-    width: auto;
-    height: 100px;
-}
-
-.Ubuntu-logo {
-    width: auto;
-    height: 100px;
-}
-
+/* === Logos === */
+.Chrome-logo,
+.Firefox-logo,
+.Windows-logo,
+.Ubuntu-logo,
 .Fedora-logo {
     width: auto;
     height: 100px;
+}
+
+/* === Logout Button === */
+.logout-footer {
+    display: flex;
+    padding-top: 20px;
+    padding-bottom: 10px;
 }
 
 .logout-button {
@@ -123,8 +156,29 @@
     background: #c0392b;
 }
 
-.logout-footer {
-    display: flex;
-    padding-top: 20px;
-    padding-bottom: 10px;
+
+/* === FIX: Ensure Guacamole display gets mouse events === */
+#guac-display {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #000;
+    overflow: visible !important;
+}
+
+#guac-display * {
+    pointer-events: auto !important;
+    z-index: 10 !important;
+}
+
+.preview-container,
+.preview-box {
+    position: relative;
+    background: transparent;
+    overflow: visible !important;
+    pointer-events: auto !important;
+}
+
+.dashboard-card.session-window {
+    overflow: visible !important;
 }
