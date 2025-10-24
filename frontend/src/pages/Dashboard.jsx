@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Guacamole from 'guacamole-common-js'
 import './Dashboard.css';
@@ -12,6 +12,12 @@ import { BASE_URL } from '../api'
 
 
 function Dashboard() {
+    const sessionTypes = {
+        'browser': 'Chrome',
+        'windows': 'Windows 11',
+        'ubuntu': 'Ubuntu',
+    };
+    const [activeSessions, setActiveSessions] = useState([])
     const [selectedSession, setSelectedSession] = useState(null);
     const [sessionUrl, setSessionUrl] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -35,6 +41,65 @@ function Dashboard() {
         console.log(cookieValue);
         return cookieValue;
     }
+
+    const fetchSessions = useCallback(async () => {
+        try {
+            const response = await fetch('/api/all_sessions/', {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setActiveSessions(data);
+            } else {
+                console.error("Failed to fetch sessions");
+            }
+        } catch (error) {
+            console.error("Error fetching sessions", error);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchSessions()
+    }, [fetchSessions]);
+
+    const handleCreateSession = async (backendType) => {
+        const sessionName = sessionTypes[backendType] || backendType;
+
+        setSelectedSession(sessionName);
+        setLoading(true);
+        setSessionUrl(null);
+
+        try {
+            const responce = await fetch(`/api/new_session/`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: JSON.stringify({ type: backendType })
+            });
+
+            if (responce.ok) {
+                const data = await responce.json();
+                setSessionUrl(data.ws_url);
+            } else {
+                const errorText = await responce.text();
+                // Updated alert to be more specific
+                alert(`Failed to create ${sessionName} session: ${errorText}`);
+            }
+        } catch (error) {
+            console.error(`Error creating ${sessionName} session:`, error);
+            alert(`Failed to create ${sessionName} session`);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleCreateChromeSession = async () => {
         setSelectedSession("Chrome");
@@ -91,9 +156,28 @@ function Dashboard() {
 
 
         const mouse = new Guacamole.Mouse(client.getDisplay().getElement());
-        mouse.onEach = (state) => client.sendMouseState(state);
+        mouse.onmousemove = (mouseState) => {
+            if (navigator.userAgent.indexOf('Firefox') === -1) {
+                mouseState.x;
+                mouseState.y;
+            }
+            client.sendMouseState(mouseState);
+        }
 
-// For scaled / touch input:
+        mouse.onmousedown = (mouseState) => {
+            client.sendMouseState(mouseState);
+        };
+
+        // Send mouse state on mouse up
+        mouse.onmouseup = (mouseState) => {
+            client.sendMouseState(mouseState);
+        };
+
+        mouse.onmousewheel = (mouseState) => {
+            client.sendMouseState(mouseState);
+        };
+
+//For scaled / touch input:
         const touch = new Guacamole.Touch(client.getDisplay().getElement());
         touch.onEach = (state) => client.sendTouchState(state);
 
@@ -166,11 +250,11 @@ function Dashboard() {
                     <div className="dashboard-card">
                         <h2>Create New Session</h2>
                         <div className="session-buttons">
-                            <button onClick={handleCreateChromeSession}><img src={Chrome_logo} alt="Chrome_logo" className="Chrome-logo" /></button>
-                            <button onClick={() => setSelectedSession('Firefox')}><img src={Firefox_logo} alt="Firefox_logo" className="Firefox-logo" /></button>
-                            <button onClick={() => setSelectedSession('Windows 11')}><img src={Windows_logo} alt="Windows_logo" className="Windows-logo" /></button>
-                            <button onClick={() => setSelectedSession('Ubuntu')}><img src={Ubuntu_logo} alt="Ubuntu_logo" className="Ubuntu-logo" /></button>
-                            <button onClick={() => setSelectedSession('Fedora')}><img src={Fedora_logo} alt="Fedora_logo" className="Fedora-logo" /></button>
+                            <button onClick={() => handleCreateSession('browser')}><img src={Chrome_logo} alt="Chrome_logo" className="Chrome-logo" /></button>
+                            {/*<button onClick={() => setSelectedSession('Firefox')}><img src={Firefox_logo} alt="Firefox_logo" className="Firefox-logo" /></button>*/}
+                            <button onClick={() => handleCreateSession('windows')}><img src={Windows_logo} alt="Windows_logo" className="Windows-logo" /></button>
+                            <button onClick={() => handleCreateSession('ubuntu')}><img src={Ubuntu_logo} alt="Ubuntu_logo" className="Ubuntu-logo" /></button>
+                            {/*<button onClick={() => setSelectedSession('Fedora')}><img src={Fedora_logo} alt="Fedora_logo" className="Fedora-logo" /></button>*/}
                         </div>
                     </div>
 
@@ -178,7 +262,20 @@ function Dashboard() {
                     <div className="dashboard-card">
                         <h2>Manage Sessions</h2>
                         <ul className="session-list">
-                            <li>No active sessions yet...</li>
+                            {activeSessions.length > 0 ? (
+                                activeSessions.map(session => (
+                                    <li key={session.id}>
+                                        {/* Use sessionTypes to show the friendly name */}
+                                        <strong>{sessionTypes[session.session_type] || session.session_type}</strong>
+                                        {/* Display machine address and dispose time */}
+                                        <span>IP: {session.machine_address}</span>
+                                        <span>Expires: {new Date(session.dispose_time).toLocaleTimeString()}</span>
+                                        {/* You could add a "Connect" or "Delete" button here */}
+                                    </li>
+                                ))
+                            ) : (
+                                <li>No active sessions yet...</li>
+                            )}
                         </ul>
                     </div>
                 </div>
@@ -211,7 +308,7 @@ function Dashboard() {
                                 ref={guacContainerRef}
                                 style={{
                                     width: "100%",
-                                    height: "600px",
+                                    height: "700px",
                                     background: "#000",
                                     position: "relative",
                                     zIndex: 10,

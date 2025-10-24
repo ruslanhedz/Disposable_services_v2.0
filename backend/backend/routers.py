@@ -22,6 +22,8 @@ class RegLogRouter:
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if app_label in self.labels:
             return db == 'reg_log'
+        elif db == 'reg_log':
+            return False
         return None
 
 class SessionsRouter:
@@ -48,4 +50,6 @@ class SessionsRouter:
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if app_label in self.route_app_labels:
             return db == 'sessions'
+        elif db == 'sessions':
+            return False
         return None
