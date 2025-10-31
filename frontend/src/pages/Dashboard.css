@@ -1,185 +1,208 @@
-/* === Layout & Typography === */
+/* === Global & App Container === */
+body {
+    margin: 0;
+    background: #181A20;
+    font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
+    color: #F4F4F7;
+    overflow-x: auto;
+}
+
 .dashboard-container {
-    padding: 20px;
-    background-color: #121212;
-    color: #fff;
+    width: 100vw;
     min-height: 100vh;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
 }
 
 .dashboard-title {
     text-align: center;
-    font-size: 2rem;
-    margin-bottom: 20px;
+    font-size: 2.4rem;
+    margin: 40px 0 32px 0;
+    letter-spacing: 1px;
+    font-weight: 700;
 }
 
+/* === Main Layout Grid === */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 2fr; /* Left column smaller, right column wider */
-    gap: 20px;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    padding: 0 48px 32px 48px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
-.left-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* === Card Styling === */
+/* === Card Design === */
 .dashboard-card {
-    background: #1e1e1e;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #333;
-}
-
-.dashboard-card.session-window {
-    display: flex;
-    flex-direction: column;
-    position: relative;
+    background: #23272F;
+    padding: 28px 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(18,20,24,0.23);
+    border: 1px solid #262A33;
+    margin-bottom: 16px;
+    transition: box-shadow 0.2s;
 }
 
 .dashboard-card h2 {
-    margin-bottom: 15px;
-    position: relative;
-    z-index: 1; /* Ensure the title doesn’t overlap the display */
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    font-weight: 600;
 }
 
 /* === Session Creation Buttons === */
 .session-buttons {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 18px;
 }
 
 .session-buttons button {
-    padding: 10px;
-    font-size: 1rem;
-    background: transparent;
-    color: #fff;
-    border: 2px solid #4fc3f7;
-    border-radius: 6px;
+    background: #242F3D;
+    border: none;
+    padding: 16px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: 0.3s;
+    outline: none;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(15,28,45,0.06);
+    position: relative;
 }
 
-.session-buttons button:hover {
-    background: #4fc3f7;
-    color: #121212;
+.session-buttons button:hover,
+.session-buttons button:focus {
+    background: #345893;
+}
+
+.Chrome-logo,
+.Windows-logo,
+.Ubuntu-logo,
+.Firefox-logo,
+.Fedora-logo {
+    width: 48px;
+    height: 48px;
+    margin-right: 14px;
+}
+
+.session-buttons button span {
+    font-size: 1.15rem;
+    font-weight: 500;
 }
 
 /* === Session List === */
 .session-list {
     list-style: none;
+    margin: 0;
     padding: 0;
-    font-size: 0.95rem;
 }
 
 .session-list li {
-    padding: 10px;
-    border-bottom: 1px solid #333;
+    background: #23242C;
+    margin-bottom: 12px;
+    padding: 13px 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid #292D37;
+    box-shadow: 0 1px 2px rgba(18, 20, 24, 0.08);
+}
+
+.session-list li strong {
+    font-size: 1.07rem;
+    color: #4fc3f7;
+    font-weight: 600;
+}
+
+.session-list li span {
+    font-size: 0.97rem;
+    color: #cfd8df;
+    margin-left: 2px;
 }
 
 /* === Session Preview Area === */
-.session-window .preview-box {
-    position: relative;
-    z-index: 2; /* Above card background */
+.dashboard-card.session-window {
+    padding: 24px;
+    min-height: auto;
+    max-width: 100%;
+    overflow: visible;
+}
+
+.preview-container {
+    margin-top: 10px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
-    border-radius: 6px;
-    border: 1px solid #444;
-    height: 750px;
+    align-items: flex-start;
     width: 100%;
-    background: #000;
-    pointer-events: auto !important; /* Allow all clicks */
+}
+
+.preview-box,
+#guac-display {
+    width: 1280px;
+    height: 720px;
+    max-width: 100vw;
+    max-height: 80vh;
+    min-width: 300px;
+    min-height: 200px;
     overflow: hidden;
+    /* keep other style properties as before */
 }
 
-/* Ensure Guacamole display and canvas are interactive */
-#guac-container,
-#guac-container * {
-    position: relative;
-    z-index: 3 !important;
-    pointer-events: auto !important;
-}
 
-#guac-container canvas {
-    width: 100% !important;
-    height: 100% !important;
-    pointer-events: auto !important;
-    display: block;
-}
-
-#guac-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: visible !important;
-}
-
-/* Empty session preview placeholder */
 .preview-box.empty {
-    color: #888;
-    pointer-events: auto;
+    color: #5c6370;
 }
 
-/* === Logos === */
-.Chrome-logo,
-.Firefox-logo,
-.Windows-logo,
-.Ubuntu-logo,
-.Fedora-logo {
-    width: auto;
-    height: 100px;
+#guac-display {
+    background: #101218;
+    outline: none;
+    border: none;
+}
+
+@media only screen and (max-width: 1000px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 8px;
+    }
+    .left-column {
+        width: 100%;
+        max-width: 100vw;
+    }
+    .dashboard-card.session-window {
+        margin-top: 22px;
+    }
+    .preview-box,
+    #guac-display {
+        width: 100%;
+        min-width: unset;
+        max-width: 100vw;
+    }
 }
 
 /* === Logout Button === */
 .logout-footer {
+    width: 100vw;
     display: flex;
-    padding-top: 20px;
-    padding-bottom: 10px;
+    justify-content: flex-end;
+    padding: 28px 54px 16px 0;
+    background: transparent;
 }
 
 .logout-button {
     background: #e74c3c;
-    color: white;
-    padding: 8px 14px;
+    color: #fff;
     border: none;
-    border-radius: 6px;
+    padding: 12px 26px;
+    font-size: 1.05rem;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    font-weight: bold;
-    transition: background 0.2s ease;
-    margin-left: auto;
+    transition: background 0.16s;
+    box-shadow: 0 2px 7px rgba(231, 76, 60, 0.13);
 }
 
-.logout-button:hover {
-    background: #c0392b;
-}
-
-
-/* === FIX: Ensure Guacamole display gets mouse events === */
-#guac-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    background: #000;
-    overflow: visible !important;
-}
-
-#guac-container * {
-    pointer-events: auto !important;
-    z-index: 10 !important;
-}
-
-.preview-container,
-.preview-box {
-    position: relative;
-    background: transparent;
-    overflow: visible !important;
-    pointer-events: auto !important;
-}
-
-.dashboard-card.session-window {
-    overflow: visible !important;
-}
+.logout-button:hover

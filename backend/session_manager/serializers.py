@@ -5,5 +5,11 @@ from .models import Session
 class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
-        fields = ['id', 'session_type', 'machine_address', 'dispose_time', 'user']
+        fields = ['id', 'session_type', 'machine_address', 'token', 'dispose_time', 'user']
         read_only_fields = ['user']
+
+
+class InformationSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Session
+        fields = ['id', 'session_type', 'dispose_time']

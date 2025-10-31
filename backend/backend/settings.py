@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'reg_log',
     'session_manager',
+    "django_celery_beat",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -196,3 +198,8 @@ SESSIO_SAVE_EVERY_REQUEST = True
 guacamole_key = os.getenv('GUACAMOLE_KEY')
 guacamole_url = os.getenv('GUACAMOLE_URL')
 guacamole_ws = os.getenv('GUACAMOLE_WS')
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/1"
+CELERY_TIMEZONE = "UTC"
+CELERY_ENABLE_UTC = True

@@ -11,6 +11,11 @@ export default defineConfig({
               changeOrigin: true,
               rewrite: (path) => path.replace(/^\/api/, ''),
           },
+          '/guacamole': {
+              target: 'ws://localhost:8080/guacamole',
+              changeOrigin: true,
+              rewrite: (path)=> path.replace(/^\/guacamole/, '')
+          },
       }
   }
 })

@@ -87,7 +87,7 @@ function Dashboard() {
 
             if (responce.ok) {
                 const data = await responce.json();
-                setSessionUrl(data.ws_url);
+                setSessionUrl('/guacamole' + data.ws_url);
             } else {
                 const errorText = await responce.text();
                 // Updated alert to be more specific
@@ -96,6 +96,33 @@ function Dashboard() {
         } catch (error) {
             console.error(`Error creating ${sessionName} session:`, error);
             alert(`Failed to create ${sessionName} session`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOpenSession = async (sessionId) => {
+        setLoading(true);
+        setSessionUrl(null);
+        try {
+            const response = await fetch(`/api/open_session/${sessionId}/`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setSessionUrl('/guacamole' + data.ws_url);
+            } else {
+                const err = await response.text();
+                alert(`Failed to open session: ${err}`);
+            }
+        } catch (e) {
+            console.error("Error opening session:", e);
+            alert("Failed to open session");
         } finally {
             setLoading(false);
         }
@@ -216,6 +243,14 @@ function Dashboard() {
         };
     }, [sessionUrl]);
 
+    useEffect(() => {
+        const handler = () => {
+            try { guacClientRef.current?.disconnect(); } catch {}
+        };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, []);
+
     const handleLogout = async () => {
         try {
             const response = await fetch(`${BASE_URL}/logout/`, {
@@ -265,12 +300,14 @@ function Dashboard() {
                             {activeSessions.length > 0 ? (
                                 activeSessions.map(session => (
                                     <li key={session.id}>
-                                        {/* Use sessionTypes to show the friendly name */}
                                         <strong>{sessionTypes[session.session_type] || session.session_type}</strong>
-                                        {/* Display machine address and dispose time */}
-                                        <span>IP: {session.machine_address}</span>
                                         <span>Expires: {new Date(session.dispose_time).toLocaleTimeString()}</span>
-                                        {/* You could add a "Connect" or "Delete" button here */}
+                                        <button
+                                            style={{ marginTop: 8 }}
+                                            onClick={() => handleOpenSession(session.id)}
+                                        >
+                                            Open
+                                        </button>
                                     </li>
                                 ))
                             ) : (
@@ -307,8 +344,8 @@ function Dashboard() {
                                 id="guac-display"
                                 ref={guacContainerRef}
                                 style={{
-                                    width: "100%",
-                                    height: "700px",
+                                    width: "1280px",
+                                    height: "800px",
                                     background: "#000",
                                     position: "relative",
                                     zIndex: 10,

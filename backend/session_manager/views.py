@@ -6,6 +6,8 @@ from django.shortcuts import render
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.generics import get_object_or_404
+from django.utils.timezone import now
 import subprocess
 import base64, json, hashlib, hmac, time
 from Crypto.Cipher import AES
@@ -15,7 +17,9 @@ from datetime import datetime, timedelta, timezone
 from backend.settings import guacamole_key, guacamole_url, guacamole_ws
 
 from .models import Session
-from .serializers import SessionSerializer
+from .serializers import SessionSerializer, InformationSessionSerializer
+
+from session_manager.tasks import expire_session_task
 
 # Create your views here.
 
@@ -148,9 +152,11 @@ class CreateSessionView(APIView):
                 "session_type": request.data.get('type'),
                 "machine_address": session_payload["connections"][request.data.get('type')]["parameters"]["hostname"],
                 "dispose_time": expire_time,
-                "token": token,
+                "token": authToken,
                 "user": request.user.id
             }
+
+            print(len(authToken))
 
             print("data created!")
 
@@ -161,7 +167,12 @@ class CreateSessionView(APIView):
 
             serializer.save(user=request.user)
 
-            session_url = (f"ws://localhost:8080/guacamole/websocket-tunnel?"
+            obj = serializer.instance
+
+            expire_session_task.apply_async((obj.id,), eta=obj.dispose_time)
+
+
+            session_url = (f"/websocket-tunnel?"
                        f"token={authToken}"
                        f"&GUAC_ID={request.data.get('type')}"
                        f"&GUAC_TYPE=c"
@@ -181,12 +192,36 @@ class AllSessionsView(APIView):
         try:
             sessions = Session.objects.filter(user=request.user)
 
-            serializer = SessionSerializer(sessions, many=True)
+            serializer = InformationSessionSerializer(sessions, many=True)
 
             return Response(serializer.data, status=200)
         except Exception as e:
             print(e)
             return Response(str(e), status=500)
+
+
+class OpenSessionView(APIView):
+    permissions_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk, *args, **kwargs):
+        session = get_object_or_404(Session, id=pk, user=request.user)
+        if session.dispose_time <= now():
+            return Response("Session expired", status=410)
+
+        authToken = session.token
+        guac_id = session.session_type
+
+        session_url = (
+            f"/websocket-tunnel?"
+            f"token={authToken}"
+            f"&GUAC_ID={guac_id}"
+            f"&GUAC_TYPE=c"
+            f"&GUAC_DATA_SOURCE=json"
+            f"&dummy=ignore"
+        )
+
+        return Response({"ws_url": session_url}, status=200)
+
 
 
 class CreateBrowserSessionView(APIView):
