@@ -21,7 +21,8 @@ from .serializers import SessionSerializer, InformationSessionSerializer
 
 from session_manager.tasks import expire_session_task
 
-# Create your views here.
+
+guacamole_tokens = guacamole_url + "/api/tokens"
 
 
 class CreateSessionView(APIView):
@@ -60,9 +61,9 @@ class CreateSessionView(APIView):
                                 "hostname": "192.168.1.8",
                                 "port": "5900",
                                 "password": "password",
-                                "width": "1280",
-                                "height": "720",
-                                "color-depth": "24"
+                                # "width": "1280",
+                                # "height": "720",
+                                # "color-depth": "24"
                             }
                         }
                     }
@@ -79,9 +80,9 @@ class CreateSessionView(APIView):
                                 "hostname": "192.168.1.11",
                                 "port": "5900",
                                 "password": "password",
-                                "width": "1280",
-                                "height": "720",
-                                "color-depth": "24"
+                                # "width": "1280",
+                                # "height": "720",
+                                # "color-depth": "24"
                             }
                         }
                     }
@@ -103,7 +104,7 @@ class CreateSessionView(APIView):
                                 "security": "nla",
                                 "enable-wallpaper": "true",
                                 "width": "1280",
-                                "height": "720",
+                                "height": "800",
                                 "color-depth": "24"
                             }
                         }
@@ -130,7 +131,7 @@ class CreateSessionView(APIView):
 
             token = base64.b64encode(encrypted).decode('utf-8')
 
-            guacamole_tokens = guacamole_url + "/api/tokens"
+            #guacamole_tokens = guacamole_url + "/api/tokens"
 
             payload = {
                 "data": token
@@ -146,7 +147,9 @@ class CreateSessionView(APIView):
 
             authToken = response.json().get("authToken")
 
-            expire_time = datetime.now(timezone.utc) + timedelta(minutes=15)
+            print(authToken)
+
+            expire_time = datetime.now(timezone.utc) + timedelta(minutes=3)
 
             data = {
                 "session_type": request.data.get('type'),
@@ -179,7 +182,7 @@ class CreateSessionView(APIView):
                        f"&GUAC_DATA_SOURCE=json"
                        f"&dummy=ignore")
 
-            return Response({"ws_url": session_url}, status=200)
+            return Response({"ws_url": session_url, "id": obj.id}, status=200)
         except Exception as e:
             print(e)
             return Response(str(e), status=500)
@@ -221,6 +224,27 @@ class OpenSessionView(APIView):
         )
 
         return Response({"ws_url": session_url}, status=200)
+
+
+class DeleteSessionView(APIView):
+    permissions_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk, *args, **kwargs):
+        session = get_object_or_404(Session, id=pk, user=request.user)
+        if session.dispose_time <= now():
+            return Response("Session expired", status=410)
+
+        authToken = session.token
+        url = guacamole_tokens + "/" + authToken
+
+        response = requests.delete(url)
+
+        if response.status_code in (200, 204):
+            session.delete()
+            return Response("Session deleted", status=200)
+        else:
+            return Response(str(response), status=500)
+
 
 
 

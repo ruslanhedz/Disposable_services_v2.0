@@ -11,3 +11,6 @@ requests
 celery
 django-celery-beat
 redis
+uvicorn
+'uvicorn[standard]'
+channels-redis

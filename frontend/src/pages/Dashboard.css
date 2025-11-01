@@ -123,6 +123,48 @@ body {
     margin-left: 2px;
 }
 
+.session-list li button + button {
+    margin-top: 4px;
+}
+
+.session-open-btn {
+    background: #2e3440;
+    color: #e6edf3;
+    border: 1px solid #3a4150;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.session-open-btn:hover,
+.session-open-btn:focus {
+    background: #345893;
+    border-color: #3f6ab0;
+    outline: none;
+}
+
+.session-delete-btn {
+    background: #2e3440;
+    color: #ffb3b3;
+    border: 1px solid #e74c3c;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.session-delete-btn:hover,
+.session-delete-btn:focus {
+    background: #3a1f22;
+    border-color: #ff6b5a;
+    outline: none;
+}
+
 /* === Session Preview Area === */
 .dashboard-card.session-window {
     padding: 24px;

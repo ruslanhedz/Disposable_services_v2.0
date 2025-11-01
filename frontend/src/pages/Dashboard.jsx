@@ -19,11 +19,17 @@ function Dashboard() {
     };
     const [activeSessions, setActiveSessions] = useState([])
     const [selectedSession, setSelectedSession] = useState(null);
+    const [currentSessionId, setCurrentSessionId] = useState(null);
     const [sessionUrl, setSessionUrl] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(null);
     const navigate = useNavigate();
     const guacContainerRef = useRef(null);
     const guacClientRef = useRef(null);
+    const [expiredSessionIds, setExpiredSessionIds] = useState(new Set());
+    const wsRef = useRef(null);
+    const fetchingRef = useRef(false);
+    const currentIdRef = useRef(null);
+    useEffect(() => { currentIdRef.current = currentSessionId; }, [currentSessionId]);
 
 
     function getCookie(name) {
@@ -67,11 +73,17 @@ function Dashboard() {
         fetchSessions()
     }, [fetchSessions]);
 
+    const refreshSessions = useCallback(() => {
+        if (fetchingRef.current) return;
+        fetchingRef.current = true;
+        fetchSessions().finally(() => {fetchingRef.current = false; });
+    }, [fetchSessions]);
+
     const handleCreateSession = async (backendType) => {
         const sessionName = sessionTypes[backendType] || backendType;
 
         setSelectedSession(sessionName);
-        setLoading(true);
+        setLoading("Starting " + sessionName + " session");
         setSessionUrl(null);
 
         try {
@@ -87,7 +99,9 @@ function Dashboard() {
 
             if (responce.ok) {
                 const data = await responce.json();
+                setCurrentSessionId(data.id);
                 setSessionUrl('/guacamole' + data.ws_url);
+                setTimeout(() => { refreshSessions(); }, 0);
             } else {
                 const errorText = await responce.text();
                 // Updated alert to be more specific
@@ -102,7 +116,8 @@ function Dashboard() {
     };
 
     const handleOpenSession = async (sessionId) => {
-        setLoading(true);
+        const sessiontype = activeSessions.find(s => s.id === sessionId)?.session_type ?? null;
+        setLoading("Opening " + sessiontype + " session");
         setSessionUrl(null);
         try {
             const response = await fetch(`/api/open_session/${sessionId}/`, {
@@ -115,6 +130,7 @@ function Dashboard() {
             });
             if (response.ok) {
                 const data = await response.json();
+                setCurrentSessionId(sessionId);
                 setSessionUrl('/guacamole' + data.ws_url);
             } else {
                 const err = await response.text();
@@ -124,9 +140,43 @@ function Dashboard() {
             console.error("Error opening session:", e);
             alert("Failed to open session");
         } finally {
-            setLoading(false);
+            setLoading(null);
         }
     };
+
+    const handleDeleteSession = async (sessionId) => {
+        try {
+            if (currentIdRef.current && sessionId === currentIdRef.current) {
+                try { guacClientRef.current?.disconnect(); } catch {}
+                setSessionUrl(null);
+                setCurrentSessionId(null);
+                const sessiontype = activeSessions.find(s => s.id === sessionId)?.session_type ?? null;
+                setLoading("deleting " + sessiontype + " session");
+            }
+
+            const response = await fetch(`/api/delete_session/${sessionId}/`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            });
+
+            if (response.ok) {
+                setLoading(null);
+                setTimeout(() => { refreshSessions(); }, 0);
+            } else {
+                const err = await response.text();
+                alert(`Failed to delete session: ${err}`);
+            }
+        } catch (e) {
+            console.error(`Error deleting session: ${e}`);
+            alert('Failed to delete session');
+        } finally {
+            setLoading(null);
+        }
+    }
 
     const handleCreateChromeSession = async () => {
         setSelectedSession("Chrome");
@@ -146,6 +196,7 @@ function Dashboard() {
             if (responce.ok) {
                 const data = await responce.json();
                 //console.log(session_url);
+                setCurrentSessionId(data.id);
                 setSessionUrl(data.ws_url);
             } else {
                 const errorText = await responce.text();
@@ -162,6 +213,9 @@ function Dashboard() {
     useEffect(() => {
         console.log("useEffect triggered, sessionUrl =", sessionUrl);
         if (!sessionUrl) return;
+
+        // Ensure previous client is fully torn down
+        try { guacClientRef.current?.disconnect(); } catch {}
 
         console.log("Creating Guacamole tunnel to:", sessionUrl);
 
@@ -251,6 +305,29 @@ function Dashboard() {
         return () => window.removeEventListener('beforeunload', handler);
     }, []);
 
+    useEffect(() => {
+        const wsProto = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${wsProto}://${window.location.host}/ws/notifications/`);
+        wsRef.current = ws;
+
+        ws.onopen = () => console.log("notif WS open");
+        ws.onmessage = (evt) => {
+            let msg; try { msg = JSON.parse(evt.data); } catch { return; }
+            if (msg.type !== "session_expired" && msg.type !== "session.expired") return;
+            const expiredId = msg.session_id;
+            setExpiredSessionIds(prev => new Set(prev).add(expiredId));
+            console.log(expiredSessionIds)
+            if (currentIdRef.current && expiredId === currentIdRef.current) {
+                try { guacClientRef.current?.disconnect(); } catch {}
+                setSessionUrl(null);
+                setCurrentSessionId(null);
+            }
+        };
+        ws.onerror = (e) => console.warn("notif WS error", e);
+        ws.onclose = () => { if (wsRef.current === ws) wsRef.current = null; };
+        return () => { try { ws.close(); } catch {} };
+    }, []);
+
     const handleLogout = async () => {
         try {
             const response = await fetch(`${BASE_URL}/logout/`, {
@@ -302,11 +379,14 @@ function Dashboard() {
                                     <li key={session.id}>
                                         <strong>{sessionTypes[session.session_type] || session.session_type}</strong>
                                         <span>Expires: {new Date(session.dispose_time).toLocaleTimeString()}</span>
-                                        <button
-                                            style={{ marginTop: 8 }}
-                                            onClick={() => handleOpenSession(session.id)}
-                                        >
+                                        {expiredSessionIds.has(session.id) && (
+                                            <span style={{ color: "crimson", marginLeft: 8 }}>Session is expired</span>
+                                        )}
+                                        <button className="session-open-btn" /*style={{ marginTop: 8 }}*/ onClick={() => handleOpenSession(session.id)} disabled={expiredSessionIds.has(session.id)}>
                                             Open
+                                        </button>
+                                        <button className="session-delete-btn" onClick={() => handleDeleteSession(session.id)} disabled={expiredSessionIds.has(session.id)}>
+                                            Delete
                                         </button>
                                     </li>
                                 ))
@@ -337,20 +417,18 @@ function Dashboard() {
                 <div className="dashboard-card session-window">
                     <h2 style={{ zIndex: 1, position: "relative" }}>Session Preview</h2>
                     <div className="preview-container">
-                        {loading ? (
-                            <div className="preview-box">Starting Chrome session...</div>
+                        {typeof loading === "string" && loading.trim() ? (
+                            <div className="preview-box">{loading}</div>
                         ) : sessionUrl ? (
-                            <div
-                                id="guac-display"
-                                ref={guacContainerRef}
-                                style={{
-                                    width: "1280px",
-                                    height: "800px",
-                                    background: "#000",
-                                    position: "relative",
-                                    zIndex: 10,
-                                }}
-                            ></div>
+                            <div id="guac-display" ref={guacContainerRef} style={{
+                                width: "1280px",
+                                height: "800px",
+                                background: "#000",
+                                position: "relative",
+                                zIndex: 10
+                            }} />
+                        ) : expiredSessionIds.size > 0 ? (
+                            <div className="preview-box">Session is expired</div>
                         ) : (
                             <div className="preview-box empty">No session selected</div>
                         )}
