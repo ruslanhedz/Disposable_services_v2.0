@@ -101,6 +101,7 @@ function Dashboard() {
                 const data = await responce.json();
                 setCurrentSessionId(data.id);
                 setSessionUrl('/guacamole' + data.ws_url);
+                //setSessionUrl(data.ws_url);
                 setTimeout(() => { refreshSessions(); }, 0);
             } else {
                 const errorText = await responce.text();
@@ -132,6 +133,7 @@ function Dashboard() {
                 const data = await response.json();
                 setCurrentSessionId(sessionId);
                 setSessionUrl('/guacamole' + data.ws_url);
+                //setSessionUrl(data.ws_url);
             } else {
                 const err = await response.text();
                 alert(`Failed to open session: ${err}`);

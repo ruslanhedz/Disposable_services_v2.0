@@ -110,6 +110,11 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DATABASE_HOST'),
         'PORT': os.getenv('DATABASE_PORT'),
+        'OPTIONS': {
+            'ssl': {
+                'ca': '../../global-bundle.pem',
+            }
+        }
     },
     # 'reg_log': {
     #     'ENGINE': 'django.db.backends.mysql',
@@ -199,8 +204,8 @@ guacamole_key = os.getenv('GUACAMOLE_KEY')
 guacamole_url = os.getenv('GUACAMOLE_URL')
 guacamole_ws = os.getenv('GUACAMOLE_WS')
 
-CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/1"
+CELERY_BROKER_URL = "redis://35.171.155.179:6379/0"
+CELERY_RESULT_BACKEND = "redis://35.171.155.179:6379/1"
 CELERY_TIMEZONE = "UTC"
 CELERY_ENABLE_UTC = True
 

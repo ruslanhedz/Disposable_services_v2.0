@@ -16,19 +16,24 @@ import time
 from datetime import datetime, timedelta, timezone
 from backend.settings import guacamole_key, guacamole_url, guacamole_ws
 
+import boto3
+from botocore.exceptions import ClientError
+
 from .models import Session
 from .serializers import SessionSerializer, InformationSessionSerializer
 
 from session_manager.tasks import expire_session_task
 
 
-guacamole_tokens = guacamole_url + "/api/tokens"
 
+guacamole_tokens = guacamole_url + "/api/tokens"
 
 class CreateSessionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post (self, request, *args, **kwargs):
+        instance_address = ""
+        instance_id = ""
         try:
             # sessions = {
             #     "browser": "Ubuntu server Browser session",
@@ -47,6 +52,83 @@ class CreateSessionView(APIView):
             #
             # time.sleep(200)
 
+            #Creating instance on AWS
+            ec2 = boto3.resource('ec2')
+            ami = ""
+            InstanceType = ""
+            SecurityGroup = ""
+            User_data_script = ""
+
+            if (request.data.get('type') == 'browser'):
+                ami = "ami-092ba2327057c4ea6"
+                InstanceType = "t3.medium"
+                SecurityGroup = "sg-0e0cda71ec6fb584a"
+                try:
+                    with open('./startup_scripts/browser-session.sh', 'r') as file:
+                        User_data_script = file.read()
+                except FileNotFoundError:
+                    return Response({'error': 'browser-session.sh does not exist'}, status=404)
+            elif (request.data.get('type') == 'ubuntu'):
+                ami = "ami-0fa7eef263311aa78"
+                InstanceType = "t3.large"
+                SecurityGroup = "sg-0e0cda71ec6fb584a"
+                try:
+                    with open('./session_manager/startup_scripts/ubuntu-session.sh', 'r') as file:
+                        User_data_script = file.read()
+                except FileNotFoundError:
+                    return Response({'error': 'ubuntu-session.sh does not exist'}, status=404)
+            elif (request.data.get('type') == 'windows'):
+                ami = "ami-0558a483739f23a29"
+                InstanceType = "t3.large"
+                SecurityGroup = "sg-01ac04a17acd92ece"
+                User_data_script = ""
+
+            try:
+                instances = ec2.create_instances(
+                    ImageId=ami,
+                    InstanceType=InstanceType,
+                    KeyName='Sandbox_ssh_key_pair',
+                    MinCount=1,
+                    MaxCount=1,
+
+                    NetworkInterfaces=[
+                        {
+                            'DeviceIndex': 0,
+                            'SubnetId': 'subnet-025b209d43eb859c1',
+                            'Groups': [
+                                SecurityGroup
+                            ],
+                        }
+                    ],
+
+                    TagSpecifications=[
+                        {
+                            'ResourceType': 'instance',
+                            'Tags': [
+                                {
+                                    'Key': 'Name',
+                                    'Value': f'{request.user.username} {request.data.get('type')} instance'
+                                },
+                            ]
+                        },
+                    ],
+
+                    UserData=User_data_script,
+                )
+
+                instance = instances[0]
+
+                instance.wait_until_running()
+
+                instance_id = instance.id
+                instance_address = instance.private_ip_address
+
+            except ClientError as e:
+                return Response({'error': str(e)}, status=500)
+
+
+            time.sleep(60)
+
             key = bytes.fromhex(guacamole_key)
             iv = bytes(16)
 
@@ -58,9 +140,11 @@ class CreateSessionView(APIView):
                         "browser": {
                             "protocol": "vnc",
                             "parameters": {
-                                "hostname": "192.168.1.8",
+                                "hostname": instance_address,
                                 "port": "5900",
                                 "password": "password",
+                                #"security": "tls",
+                                #"ignore-cert": "true",
                                 # "width": "1280",
                                 # "height": "720",
                                 # "color-depth": "24"
@@ -77,7 +161,7 @@ class CreateSessionView(APIView):
                         "ubuntu": {
                             "protocol": "vnc",
                             "parameters": {
-                                "hostname": "192.168.1.11",
+                                "hostname": instance_address,
                                 "port": "5900",
                                 "password": "password",
                                 # "width": "1280",
@@ -96,10 +180,10 @@ class CreateSessionView(APIView):
                         "windows": {
                             "protocol": "rdp",
                             "parameters": {
-                                "hostname": "192.168.1.6",
+                                "hostname": instance_address,
                                 "port": "3389",
                                 "username": "disposable-user",
-                                "password": "password",
+                                "password": "UDispasec1!ins",
                                 "ignore-cert": "true",
                                 "security": "nla",
                                 "enable-wallpaper": "true",
@@ -141,7 +225,7 @@ class CreateSessionView(APIView):
                     "Content-Type": "application/x-www-form-urlencoded",
             }
 
-            response = requests.post(guacamole_tokens, data=payload, headers=headers)
+            response = requests.post(guacamole_tokens, data=payload, headers=headers, verify=False)
 
             print("Get response!")
 
@@ -149,10 +233,11 @@ class CreateSessionView(APIView):
 
             print(authToken)
 
-            expire_time = datetime.now(timezone.utc) + timedelta(minutes=3)
+            expire_time = datetime.now(timezone.utc) + timedelta(minutes=2)
 
             data = {
                 "session_type": request.data.get('type'),
+                "instance_id": instance_id,
                 "machine_address": session_payload["connections"][request.data.get('type')]["parameters"]["hostname"],
                 "dispose_time": expire_time,
                 "token": authToken,
@@ -234,10 +319,19 @@ class DeleteSessionView(APIView):
         if session.dispose_time <= now():
             return Response("Session expired", status=410)
 
+        instance_id = session.instance_id
         authToken = session.token
+
+        ec2 = boto3.resource('ec2')
+
+        instance = ec2.Instance(instance_id)
+
+        response = instance.terminate()
+        instance.wait_until_terminated()
+
         url = guacamole_tokens + "/" + authToken
 
-        response = requests.delete(url)
+        response = requests.delete(url, verify=False)
 
         if response.status_code in (200, 204):
             session.delete()
@@ -340,6 +434,9 @@ class CreateBrowserSessionView(APIView):
             print(f"session url: {session_url}")
 
             return Response({"ws_url": session_url}, status=200)
+
+        except ClientError as e:
+            return Response({'error': str(e)}, status=500)
 
         except Exception as e:
             return Response(str(e), status=500)

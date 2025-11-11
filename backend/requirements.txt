@@ -12,5 +12,6 @@ celery
 django-celery-beat
 redis
 uvicorn
-'uvicorn[standard]'
+uvicorn[standard]
 channels-redis
+boto3

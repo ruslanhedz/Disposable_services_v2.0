@@ -6,6 +6,8 @@ from session_manager.models import Session
 import os
 import requests
 import logging
+import boto3
+from botocore.exceptions import ClientError
 
 from backend.settings import guacamole_url
 
@@ -34,17 +36,27 @@ def expire_session_task(session_id: int):
 
 
         try:
+            instance_id = s.instance_id
             authToken = s.token
+
+            ec2 = boto3.resource('ec2')
+
+            instance = ec2.Instance(instance_id)
+
+            resonse = instance.terminate()
+
             url = guacamole_tokens + "/" + authToken
-            response = requests.delete(url)
+            response = requests.delete(url, verify=False)
             if response.status_code in (200, 204):
                 logger.info("Guacamole token %s deleted", s.token)
             elif response.status_code in (403, 404):
                 logger.info("Guacamole token %s already invalid or not found (%s)", s.token, response.status_code)
             else:
                 logger.warning("Unexpected response deleting Guacamole token %s: %s %s", s.token, response.status_code, response.text)
+
+            s.delete()
+
+        except ClientError as e:
+            logger.exception("Error terminating instance %s: %s", s.id, e)
         except Exception as e:
             logger.exception("Error deleting Guacamole token %s: %s", s.token, e)
-
-
-        s.delete()
