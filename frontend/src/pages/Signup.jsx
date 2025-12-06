@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
+
 
 function Signup() {
     const navigate = useNavigate();
@@ -13,6 +14,26 @@ function Signup() {
         password: '',
         verifyPassword: '',
     });
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await fetch(`/api/auth/status/`, {
+                    credentials: "include",
+                });
+
+                const data = await res.json();
+
+                if (data.authenticated) {
+                    navigate("/dashboard");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        checkAuth();
+    }, []);
 
     const [errors, setErrors] = useState({});
     const [success, setSuccess] = useState('');
@@ -43,7 +64,7 @@ function Signup() {
         console.log(form);
 
         try {
-            const response = await fetch("http://localhost:8000/signup/", {
+            const response = await fetch(`/api/signup/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -57,8 +78,12 @@ function Signup() {
             });
 
             if (response.status === 201) {
-                setSuccess("Account created successfully!")
-                setTimeout(() => navigate("/login", 2000))
+                if (response.status === 201) {
+                    setSuccess("Account created successfully!");
+                    setTimeout(() => {
+                        navigate("/login");
+                    }, 2000); // wait 2 seconds before redirect
+                }
             } else {
                 const data = await response.json();
                 setErrors({general: data.error || "Signup failed"  });

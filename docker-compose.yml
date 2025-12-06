@@ -4,18 +4,31 @@ services:
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      #- ./init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7
+    container_name: redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - app_network
 
 volumes:
   mysql_data:
+  redis_data:
 
 networks:
   app_network:

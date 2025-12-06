@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'api.disposable-services.online', 'www.disposable-services.online', 'disposable-services.online']
 
 
 # Application definition
@@ -53,9 +53,13 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'dj_rest_auth.registration',
     'reg_log',
+    'session_manager',
+    "django_celery_beat",
+    "channels",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -64,13 +68,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOWED_ORIGINS = ["https://api.disposable-services.online", "https://www.disposable-services.online", "https://disposable-services.online"]
+#CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = ["https://api.disposable-services.online", "https://www.disposable-services.online", "https://disposable-services.online"]
 
 CORS_ALLOW_CREDENTIALS = True
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+USE_X_FORWARDED_HOST = True
+
+USE_X_FORWARDED_PORT = True
+
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -104,8 +117,18 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DATABASE_HOST'),
         'PORT': os.getenv('DATABASE_PORT'),
-    }
+        'OPTIONS': {
+            'ssl': {
+                'ca': '/home/ec2-user/server_dir/global-bundle.pem',
+            }
+        }
+    },
 }
+
+# DATABASE_ROUTERS = [
+#     'backend.routers.RegLogRouter',
+#     'backend.routers.SessionsRouter',
+# ]
 
 
 # Password validation
@@ -149,12 +172,16 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+DEFAULT_FROM_EMAIL = "no-reply@disposable-services.online"
+SERVER_EMAIL = "no-reply@disposable-services.online"
 
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
@@ -167,3 +194,26 @@ SESSION_COOKIE_SECURE = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 1800
 SESSIO_SAVE_EVERY_REQUEST = True
+
+guacamole_key = os.getenv('GUACAMOLE_KEY')
+guacamole_url = os.getenv('GUACAMOLE_URL')
+guacamole_ws = os.getenv('GUACAMOLE_WS')
+
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+CELERY_TIMEZONE = "UTC"
+CELERY_ENABLE_UTC = True
+
+ASGI_APPLICATION = "backend.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.getenv('CELERY_HOST'), 6379)],
+        },
+    }
+}
+
+Linux_password = os.getenv('Linux_password')
+Windows_password = os.getenv('Windows_password')

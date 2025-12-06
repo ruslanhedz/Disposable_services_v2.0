@@ -6,3 +6,12 @@ mysqlclient
 python-decouple
 python-dotenv
 django-cors-headers
+pycryptodome
+requests
+celery
+django-celery-beat
+redis
+uvicorn
+uvicorn[standard]
+channels-redis
+boto3

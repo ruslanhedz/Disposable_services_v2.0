@@ -1,12 +1,37 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 function Login() {
     const navigate = useNavigate();
-    const [form, setForm] = useState({ username_or_email: '', password: '' });
+    const [form, setForm] = useState({
+        username_or_email: '',
+        password: ''
+    });
+
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await fetch(`/api/auth/status/`, {
+                    credentials: "include",
+                });
+
+                const data = await res.json();
+
+                if (data.authenticated) {
+                    navigate("/dashboard");
+                }
+            } catch (err) {
+                console.error(err);
+                navigate("/login");
+            }
+        };
+
+        checkAuth();
+    }, []);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -16,7 +41,7 @@ function Login() {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:8000/login/", {
+            const response = await fetch(`/api/login/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json"},
                 body: JSON.stringify({

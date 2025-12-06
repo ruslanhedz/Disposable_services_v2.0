@@ -12,6 +12,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from .serializers import UserSerializer
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 
 
 class SignUpView(generics.CreateAPIView):
@@ -26,7 +28,7 @@ class SignUpView(generics.CreateAPIView):
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:5173/activate/{uid}/{token}/"
+        activation_link = f"https://www.disposable-services.online/activate/{uid}/{token}/"
 
         send_mail(
             "Activate your account",
@@ -81,9 +83,19 @@ class LoginView(generics.CreateAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         logout(request)
         return Response(status=status.HTTP_200_OK)
+
+
+class AuthStatusView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "authenticated": True
+        })
