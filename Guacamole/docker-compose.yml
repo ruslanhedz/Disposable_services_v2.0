@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  guacd:
+    image: guacamole/guacd
+    container_name: guacd
+    restart: always
+    volumes:
+      - ./guacd-conf:/etc/guacamole:Z
+      - ./guacd-certs:/etc/guacamole/ssl:Z
+
+  mysql:
+    image: mariadb:latest
+    container_name: mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=MyRootPass
+      - MYSQL_DATABASE=guacamole_db
+      - MYSQL_USER=guacamole_user
+      - MYSQL_PASSWORD=MyGuaPass
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d:Z
+
+  guacamole:
+    image: guacamole/guacamole
+    container_name: guacamole
+    restart: always
+    depends_on:
+      - guacd
+      - mysql
+    ports:
+      - "10.0.0.6:8443:8443"
+    environment:
+      # Connection to guacd
+      - GUACD_HOSTNAME=guacd
+      - GUACD_PORT=4822
+      - GUACD_SSL=true
+      - GUACD_SSL_TRUST_ALL=true
+      # Connection to MySQL (as set above)
+      - MYSQL_HOSTNAME=mysql
+      - MYSQL_DATABASE=guacamole_db
+      - MYSQL_USER=guacamole_user
+      - MYSQL_PASSWORD=MyGuaPass
+      # Enable JSON authentication
+      - JSON_ENABLED=true
+      - JSON_SECRET_KEY=
+    volumes:
+      - ./tomcat-certs:/etc/guacamole-certs:Z
+      - ./server.xml:/usr/local/tomcat/conf/server.xml:Z
+      - ./guacd-certs/guacd.crt:/opt/guacd-trust/guacd.crt:Z

@@ -3,18 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import Guacamole from 'guacamole-common-js'
 import './Dashboard.css';
 import Chrome_logo from '../../public/Chrome.svg';
-import Firefox_logo from '../../public/Firefox.svg';
-import Windows_logo from '../../public/Windows_11.svg';
+import Windows_logo from '../../public/Windows_wordmark.svg';
 import Ubuntu_logo from '../../public/Ubuntu.svg';
-import Fedora_logo from '../../public/Fedora.svg';
-
-import { BASE_URL } from '../api'
 
 
 function Dashboard() {
     const sessionTypes = {
         'browser': 'Chrome',
-        'windows': 'Windows 11',
+        'windows': 'Windows',
         'ubuntu': 'Ubuntu',
     };
     const [activeSessions, setActiveSessions] = useState([])
@@ -100,7 +96,7 @@ function Dashboard() {
             if (responce.ok) {
                 const data = await responce.json();
                 setCurrentSessionId(data.id);
-                setSessionUrl('/guacamole' + data.ws_url);
+                setSessionUrl('wss://api.disposable-services.online/guacamole' + data.ws_url);
                 //setSessionUrl(data.ws_url);
                 setTimeout(() => { refreshSessions(); }, 0);
             } else {
@@ -132,7 +128,7 @@ function Dashboard() {
             if (response.ok) {
                 const data = await response.json();
                 setCurrentSessionId(sessionId);
-                setSessionUrl('/guacamole' + data.ws_url);
+                setSessionUrl('wss://api.disposable-services.online/guacamole' + data.ws_url);
                 //setSessionUrl(data.ws_url);
             } else {
                 const err = await response.text();
@@ -180,38 +176,6 @@ function Dashboard() {
         }
     }
 
-    const handleCreateChromeSession = async () => {
-        setSelectedSession("Chrome");
-        setLoading(true);
-        setSessionUrl(null);
-
-        try {
-            const responce = await fetch(`/api/new_session/`, {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken"),
-                },
-            });
-
-            if (responce.ok) {
-                const data = await responce.json();
-                //console.log(session_url);
-                setCurrentSessionId(data.id);
-                setSessionUrl(data.ws_url);
-            } else {
-                const errorText = await responce.text();
-                alert(`Failed to create session: ${errorText}`);
-            }
-        } catch (error) {
-            console.error("Error creating Chrome session:", error);
-            alert("Failed to create Chrome session");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
         console.log("useEffect triggered, sessionUrl =", sessionUrl);
         if (!sessionUrl) return;
@@ -251,7 +215,6 @@ function Dashboard() {
             client.sendMouseState(mouseState);
         };
 
-        // Send mouse state on mouse up
         mouse.onmouseup = (mouseState) => {
             client.sendMouseState(mouseState);
         };
@@ -260,7 +223,6 @@ function Dashboard() {
             client.sendMouseState(mouseState);
         };
 
-//For scaled / touch input:
         const touch = new Guacamole.Touch(client.getDisplay().getElement());
         touch.onEach = (state) => client.sendTouchState(state);
 
@@ -332,7 +294,7 @@ function Dashboard() {
 
     const handleLogout = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/logout/`, {
+            const response = await fetch(`/api/logout/`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -398,23 +360,6 @@ function Dashboard() {
                         </ul>
                     </div>
                 </div>
-
-
-                {/*<div className="dashboard-card session-window">*/}
-                {/*    <h2>Session Preview</h2>*/}
-                {/*    {loading ? (*/}
-                {/*        <div className="preview-box">Starting Chrome session...</div>*/}
-                {/*    ) : sessionUrl ? (*/}
-                {/*        <div*/}
-                {/*            id="guac-display"*/}
-                {/*            ref={guacContainerRef}*/}
-                {/*            className="preview-box"*/}
-                {/*            style={{ width: "100%", height: "600px", background: "#000" }}*/}
-                {/*        ></div>*/}
-                {/*    ) : (*/}
-                {/*        <div className="preview-box empty">No session selected</div>*/}
-                {/*    )}*/}
-                {/*</div>*/}
 
                 <div className="dashboard-card session-window">
                     <h2 style={{ zIndex: 1, position: "relative" }}>Session Preview</h2>

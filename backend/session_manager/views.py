@@ -14,7 +14,7 @@ from Crypto.Cipher import AES
 import requests
 import time
 from datetime import datetime, timedelta, timezone
-from backend.settings import guacamole_key, guacamole_url, guacamole_ws
+from backend.settings import guacamole_key, guacamole_url, guacamole_ws, Linux_password, Windows_password
 
 import boto3
 from botocore.exceptions import ClientError
@@ -32,27 +32,7 @@ class CreateSessionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post (self, request, *args, **kwargs):
-        instance_address = ""
-        instance_id = ""
         try:
-            # sessions = {
-            #     "browser": "Ubuntu server Browser session",
-            #     "ubuntu": "Ubuntu server",
-            #     "windows": "Win 11 Pro"
-            # }
-            #
-            # result = subprocess.run(
-            #     ["powershell", "-Command", f"VBoxManage startvm \"{sessions[request.data.get('type')]}\" --type gui"],
-            #     capture_output=True,
-            #     text=True
-            # )
-            #
-            # if result.returncode != 0:
-            #     raise Exception("VBoxManage startvm failed")
-            #
-            # time.sleep(200)
-
-            #Creating instance on AWS
             ec2 = boto3.resource('ec2')
             ami = ""
             InstanceType = ""
@@ -60,41 +40,41 @@ class CreateSessionView(APIView):
             User_data_script = ""
 
             if (request.data.get('type') == 'browser'):
-                ami = "ami-092ba2327057c4ea6"
-                InstanceType = "t3.medium"
-                SecurityGroup = "sg-0e0cda71ec6fb584a"
+                ami = "ami-0b2059e1dc11d7f1a"
+                InstanceType = "c7i-flex.large"
+                SecurityGroup = "sg-09cff7932dfa5ae29"
                 try:
                     with open('./startup_scripts/browser-session.sh', 'r') as file:
                         User_data_script = file.read()
                 except FileNotFoundError:
                     return Response({'error': 'browser-session.sh does not exist'}, status=404)
             elif (request.data.get('type') == 'ubuntu'):
-                ami = "ami-0fa7eef263311aa78"
-                InstanceType = "t3.large"
-                SecurityGroup = "sg-0e0cda71ec6fb584a"
+                ami = "ami-05d9dd9b04cc7ad43"
+                InstanceType = "m7i-flex.large"
+                SecurityGroup = "sg-09cff7932dfa5ae29"
                 try:
                     with open('./session_manager/startup_scripts/ubuntu-session.sh', 'r') as file:
                         User_data_script = file.read()
                 except FileNotFoundError:
                     return Response({'error': 'ubuntu-session.sh does not exist'}, status=404)
             elif (request.data.get('type') == 'windows'):
-                ami = "ami-0558a483739f23a29"
-                InstanceType = "t3.large"
-                SecurityGroup = "sg-01ac04a17acd92ece"
+                ami = "ami-0875aeacdaaa7b0ec"
+                InstanceType = "m7i-flex.large"
+                SecurityGroup = "sg-0b0a31fbe3e3cd5e3"
                 User_data_script = ""
 
             try:
                 instances = ec2.create_instances(
                     ImageId=ami,
                     InstanceType=InstanceType,
-                    KeyName='Sandbox_ssh_key_pair',
+                    KeyName='Ssh-private-ssh-key',
                     MinCount=1,
                     MaxCount=1,
 
                     NetworkInterfaces=[
                         {
                             'DeviceIndex': 0,
-                            'SubnetId': 'subnet-025b209d43eb859c1',
+                            'SubnetId': 'subnet-048466c21de66af93',
                             'Groups': [
                                 SecurityGroup
                             ],
@@ -112,8 +92,6 @@ class CreateSessionView(APIView):
                             ]
                         },
                     ],
-
-                    UserData=User_data_script,
                 )
 
                 instance = instances[0]
@@ -126,8 +104,10 @@ class CreateSessionView(APIView):
             except ClientError as e:
                 return Response({'error': str(e)}, status=500)
 
-
-            time.sleep(60)
+            if (request.data.get('type') == 'ubuntu'):
+                time.sleep(60)
+            else:
+                time.sleep(30)
 
             key = bytes.fromhex(guacamole_key)
             iv = bytes(16)
@@ -142,12 +122,7 @@ class CreateSessionView(APIView):
                             "parameters": {
                                 "hostname": instance_address,
                                 "port": "5900",
-                                "password": "password",
-                                #"security": "tls",
-                                #"ignore-cert": "true",
-                                # "width": "1280",
-                                # "height": "720",
-                                # "color-depth": "24"
+                                "password": Linux_password,
                             }
                         }
                     }
@@ -163,10 +138,7 @@ class CreateSessionView(APIView):
                             "parameters": {
                                 "hostname": instance_address,
                                 "port": "5900",
-                                "password": "password",
-                                # "width": "1280",
-                                # "height": "720",
-                                # "color-depth": "24"
+                                "password": Linux_password,
                             }
                         }
                     }
@@ -183,7 +155,7 @@ class CreateSessionView(APIView):
                                 "hostname": instance_address,
                                 "port": "3389",
                                 "username": "disposable-user",
-                                "password": "UDispasec1!ins",
+                                "password": Windows_password,
                                 "ignore-cert": "true",
                                 "security": "nla",
                                 "enable-wallpaper": "true",
@@ -233,7 +205,7 @@ class CreateSessionView(APIView):
 
             print(authToken)
 
-            expire_time = datetime.now(timezone.utc) + timedelta(minutes=2)
+            expire_time = datetime.now(timezone.utc) + timedelta(minutes=15)
 
             data = {
                 "session_type": request.data.get('type'),
@@ -327,7 +299,7 @@ class DeleteSessionView(APIView):
         instance = ec2.Instance(instance_id)
 
         response = instance.terminate()
-        instance.wait_until_terminated()
+        #instance.wait_until_terminated()
 
         url = guacamole_tokens + "/" + authToken
 
@@ -338,106 +310,3 @@ class DeleteSessionView(APIView):
             return Response("Session deleted", status=200)
         else:
             return Response(str(response), status=500)
-
-
-
-
-class CreateBrowserSessionView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        try:
-            result = subprocess.run(
-                ["powershell", "-Command", "VBoxManage startvm \"Ubuntu server Browser session\" --type gui"],
-                capture_output=True,
-                text=True
-            )
-
-            if result.returncode != 0:
-                raise Exception("VBoxManage startvm failed")
-
-            time.sleep(100)
-
-            key = bytes.fromhex(guacamole_key)
-            iv = bytes(16)
-
-            payload = {
-                "username": request.user.username,
-                "expires": int(time.time() * 1000)+ 20 * 60 * 1000,
-                "connections": {
-                    "Browser": {
-                        "protocol": "vnc",
-                        "parameters": {
-                            "hostname": "192.168.1.8",
-                            "port": "5900",
-                            "password": "password",
-                        }
-                    }
-                }
-            }
-
-            data_bytes = json.dumps(payload, separators=(',', ':')).encode('utf-8')
-
-            sig = hmac.new(key, data_bytes, hashlib.sha256).digest()
-            signed = sig + data_bytes
-
-            pad_len = 16 - len(signed) % 16
-            signed += bytes([pad_len]) * pad_len
-
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            encrypted = cipher.encrypt(signed)
-
-            token = base64.b64encode(encrypted).decode('utf-8')
-
-            print(token)
-
-            guacamole_tokens = guacamole_url + "/api/tokens"
-
-            print(guacamole_tokens)
-
-            payload = {
-                "data": token
-            }
-
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-            }
-
-            response = requests.post(guacamole_tokens, data=payload, headers=headers)
-
-            print(response.json())
-
-            authToken = response.json().get("authToken")
-
-            expire_time = datetime.now(timezone.utc) + timedelta(minutes=15)
-
-            data = {
-                "session_type": "browser",
-                "machine_address": "192.168.1.8",
-                "dispose_time": expire_time,
-                "token": token,
-                "user": request.user.id
-            }
-
-            serializer = SessionSerializer(data=data)
-
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=400)
-
-            session_url = (f"ws://localhost:8080/guacamole/websocket-tunnel?"
-                           f"token={authToken}"
-                           f"&GUAC_ID=Browser"
-                           f"&GUAC_TYPE=c"
-                           f"&GUAC_DATA_SOURCE=json"
-                           f"&dummy=ignore")
-
-            print(f"session url: {session_url}")
-
-            return Response({"ws_url": session_url}, status=200)
-
-        except ClientError as e:
-            return Response({'error': str(e)}, status=500)
-
-        except Exception as e:
-            return Response(str(e), status=500)
-

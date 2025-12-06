@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
-import { BASE_URL } from '../api'
 
 function Signup() {
     const navigate = useNavigate();
@@ -30,7 +29,6 @@ function Signup() {
                 }
             } catch (err) {
                 console.error(err);
-                navigate("/login");
             }
         };
 

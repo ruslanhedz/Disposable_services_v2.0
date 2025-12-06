@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'api.disposable-services.online', 'www.disposable-services.online', 'disposable-services.online']
 
 
 # Application definition
@@ -71,12 +71,19 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOWED_ORIGINS = ["https://api.disposable-services.online", "https://www.disposable-services.online", "https://disposable-services.online"]
 #CORS_ALLOW_ALL_ORIGINS = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = ["https://api.disposable-services.online", "https://www.disposable-services.online", "https://disposable-services.online"]
 
 CORS_ALLOW_CREDENTIALS = True
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+USE_X_FORWARDED_HOST = True
+
+USE_X_FORWARDED_PORT = True
+
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -112,26 +119,10 @@ DATABASES = {
         'PORT': os.getenv('DATABASE_PORT'),
         'OPTIONS': {
             'ssl': {
-                'ca': '../../global-bundle.pem',
+                'ca': '/home/ec2-user/server_dir/global-bundle.pem',
             }
         }
     },
-    # 'reg_log': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': os.getenv('DB_REG_LOG_NAME'),
-    #     'USER': os.getenv('DB_USER'),
-    #     'PASSWORD': os.getenv('DB_PASSWORD'),
-    #     'HOST': os.getenv('DATABASE_HOST'),
-    #     'PORT': os.getenv('DATABASE_PORT'),
-    # },
-    # 'sessions': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': os.getenv('DB_SESSIONS_NAME'),
-    #     'USER': os.getenv('DB_USER'),
-    #     'PASSWORD': os.getenv('DB_PASSWORD'),
-    #     'HOST': os.getenv('DATABASE_HOST'),
-    #     'PORT': os.getenv('DATABASE_PORT'),
-    # }
 }
 
 # DATABASE_ROUTERS = [
@@ -181,12 +172,16 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# EMAIL_HOST = os.getenv('EMAIL_HOST')
-# EMAIL_PORT = os.getenv('EMAIL_PORT')
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+DEFAULT_FROM_EMAIL = "no-reply@disposable-services.online"
+SERVER_EMAIL = "no-reply@disposable-services.online"
 
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
@@ -204,8 +199,8 @@ guacamole_key = os.getenv('GUACAMOLE_KEY')
 guacamole_url = os.getenv('GUACAMOLE_URL')
 guacamole_ws = os.getenv('GUACAMOLE_WS')
 
-CELERY_BROKER_URL = "redis://35.171.155.179:6379/0"
-CELERY_RESULT_BACKEND = "redis://35.171.155.179:6379/1"
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 CELERY_TIMEZONE = "UTC"
 CELERY_ENABLE_UTC = True
 
@@ -215,7 +210,10 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [(os.getenv('CELERY_HOST'), 6379)],
         },
     }
 }
+
+Linux_password = os.getenv('Linux_password')
+Windows_password = os.getenv('Windows_password')

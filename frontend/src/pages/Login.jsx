@@ -2,8 +2,6 @@ import {useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
-import { BASE_URL } from '../api'
-
 function Login() {
     const navigate = useNavigate();
     const [form, setForm] = useState({

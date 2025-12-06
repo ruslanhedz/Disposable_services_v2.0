@@ -78,12 +78,15 @@ body {
 }
 
 .Chrome-logo,
-.Windows-logo,
-.Ubuntu-logo,
-.Firefox-logo,
-.Fedora-logo {
-    width: 48px;
-    height: 48px;
+.Ubuntu-logo {
+    width: 196px;
+    height: 64px;
+    margin-right: 14px;
+}
+
+.Windows-logo {
+    width: 240px;
+    height: 64px;
     margin-right: 14px;
 }
 
@@ -247,4 +250,4 @@ body {
     box-shadow: 0 2px 7px rgba(231, 76, 60, 0.13);
 }
 
-.logout-button:hover
+.logout-button:hover {}

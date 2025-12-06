@@ -28,7 +28,7 @@ class SignUpView(generics.CreateAPIView):
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:5173/activate/{uid}/{token}/"
+        activation_link = f"https://www.disposable-services.online/activate/{uid}/{token}/"
 
         send_mail(
             "Activate your account",

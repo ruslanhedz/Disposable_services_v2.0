@@ -5,9 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+      base: "./",
       proxy: {
           '/api': {
-              target: 'http://127.0.0.1:8000',
+              target: 'https://api.disposable-services.online/django',
               changeOrigin: true,
               rewrite: (path) => path.replace(/^\/api/, ''),
           },
@@ -17,13 +18,13 @@ export default defineConfig({
           //     rewrite: (path)=> path.replace(/^\/guacamole/, '')
           // },
           '/guacamole': {
-              target: 'https://34.229.153.144:8443',
+              target: 'https://api.disposable-services.online',
               changeOrigin: true,
               ws: true,
               secure: false, // accept your self-signed cert in dev
       // do not rewrite '/guacamole'
           },
-          "/ws":  { target: "http://localhost:8000", changeOrigin: true, ws: true },
+          "/ws":  { target: "https://api.disposable-services.online/django", changeOrigin: true, ws: true },
       }
   }
 })
