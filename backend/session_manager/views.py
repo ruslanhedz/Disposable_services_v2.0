@@ -37,31 +37,19 @@ class CreateSessionView(APIView):
             ami = ""
             InstanceType = ""
             SecurityGroup = ""
-            User_data_script = ""
 
             if (request.data.get('type') == 'browser'):
                 ami = "ami-0b2059e1dc11d7f1a"
                 InstanceType = "c7i-flex.large"
                 SecurityGroup = "sg-09cff7932dfa5ae29"
-                try:
-                    with open('./startup_scripts/browser-session.sh', 'r') as file:
-                        User_data_script = file.read()
-                except FileNotFoundError:
-                    return Response({'error': 'browser-session.sh does not exist'}, status=404)
             elif (request.data.get('type') == 'ubuntu'):
                 ami = "ami-05d9dd9b04cc7ad43"
                 InstanceType = "m7i-flex.large"
                 SecurityGroup = "sg-09cff7932dfa5ae29"
-                try:
-                    with open('./session_manager/startup_scripts/ubuntu-session.sh', 'r') as file:
-                        User_data_script = file.read()
-                except FileNotFoundError:
-                    return Response({'error': 'ubuntu-session.sh does not exist'}, status=404)
             elif (request.data.get('type') == 'windows'):
                 ami = "ami-0875aeacdaaa7b0ec"
                 InstanceType = "m7i-flex.large"
                 SecurityGroup = "sg-0b0a31fbe3e3cd5e3"
-                User_data_script = ""
 
             try:
                 instances = ec2.create_instances(
@@ -171,9 +159,6 @@ class CreateSessionView(APIView):
                 raise Exception("Error in responce type")
 
 
-            print(session_payload)
-
-
             data_bytes = json.dumps(session_payload, separators=(',', ':')).encode('utf-8')
 
             sig = hmac.new(key, data_bytes, hashlib.sha256).digest()
@@ -199,11 +184,7 @@ class CreateSessionView(APIView):
 
             response = requests.post(guacamole_tokens, data=payload, headers=headers, verify=False)
 
-            print("Get response!")
-
             authToken = response.json().get("authToken")
-
-            print(authToken)
 
             expire_time = datetime.now(timezone.utc) + timedelta(minutes=15)
 
@@ -215,10 +196,6 @@ class CreateSessionView(APIView):
                 "token": authToken,
                 "user": request.user.id
             }
-
-            print(len(authToken))
-
-            print("data created!")
 
             serializer = SessionSerializer(data=data)
 

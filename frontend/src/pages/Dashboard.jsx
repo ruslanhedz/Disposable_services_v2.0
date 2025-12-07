@@ -40,7 +40,6 @@ function Dashboard() {
                 }
             }
         }
-        console.log(cookieValue);
         return cookieValue;
     }
 
