@@ -16,11 +16,11 @@
 - Do uruchomienia serwera Django wymagane jest przygotowanie pliku `.env`, który nie został zamieszczony tutaj ze względów bezpieczeństwa aplikacji. Musi ten plik zawierać sekretny klucz aplikacji Django, dane bazy danych, serwera smtp oraz dane logujące do maszyn wirtualnych sesji.
 
 - W niniejszym projekcie serwer Django posiada dwie aplikacje wewnętrzne:
-    • `reg_log` - aplikacja odpowiadające za rejestrację oraz logowanie użytkowników do platformy
-    • `session_manager` - aplikacja odpowiadająca za założenie sesji przez użytkowników. Do jej obowiązków należą:
-        ‣ Utworzenie sesji na serwerze Guacamole,
-        ‣ Uruchomienie/usunięcie instancji na chmurze,
-        ‣ Automatyczne usunięcie sesji użytkownika po jej wygaśnięciu.
+    - `reg_log` - aplikacja odpowiadające za rejestrację oraz logowanie użytkowników do platformy
+    - `session_manager` - aplikacja odpowiadająca za założenie sesji przez użytkowników. Do jej obowiązków należą:
+        - Utworzenie sesji na serwerze Guacamole,
+        - Uruchomienie/usunięcie instancji na chmurze,
+        - Automatyczne usunięcie sesji użytkownika po jej wygaśnięciu.
 
 - Serwer django został uruchomiony używający połączenia https przy pomocy asgi.
 
@@ -69,11 +69,11 @@
 - To run the Django server you must prepare a `.env` file, which is not included here for security reasons. This file has to contain the Django secret key, database credentials, SMTP server settings and login data for the virtual machines used by the sessions.
 
 - In this project the Django server contains two internal applications:
-  • `reg_log` – application responsible for user registration and login to the platform
-  • `session_manager` – application responsible for creating user sessions. Its responsibilities include:
-    ‣ Creating a session on the Guacamole server
-    ‣ Starting/removing instances in the cloud
-    ‣ Automatically deleting the user’s session after it expires
+  - `reg_log` – application responsible for user registration and login to the platform
+  - `session_manager` – application responsible for creating user sessions. Its responsibilities include:
+    - Creating a session on the Guacamole server
+    - Starting/removing instances in the cloud
+    - Automatically deleting the user’s session after it expires
 
 - The Django server is run over HTTPS using ASGI.
 
