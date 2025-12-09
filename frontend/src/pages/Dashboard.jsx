@@ -43,6 +43,7 @@ function Dashboard() {
         return cookieValue;
     }
 
+    //Fetching list of active session from API server
     const fetchSessions = useCallback(async () => {
         try {
             const response = await fetch('/api/all_sessions/', {
@@ -74,6 +75,7 @@ function Dashboard() {
         fetchSessions().finally(() => {fetchingRef.current = false; });
     }, [fetchSessions]);
 
+    //Creates session from user interface
     const handleCreateSession = async (backendType) => {
         const sessionName = sessionTypes[backendType] || backendType;
 
@@ -175,6 +177,7 @@ function Dashboard() {
         }
     }
 
+    //Configuring Guacamole WebSocket tunnel and configuring session control mechanism
     useEffect(() => {
         console.log("useEffect triggered, sessionUrl =", sessionUrl);
         if (!sessionUrl) return;
@@ -268,6 +271,7 @@ function Dashboard() {
         return () => window.removeEventListener('beforeunload', handler);
     }, []);
 
+    //Connecting to WebSocket connection from Django for expired session notification
     useEffect(() => {
         const wsProto = window.location.protocol === "https:" ? "wss" : "ws";
         const ws = new WebSocket(`${wsProto}://${window.location.host}/ws/notifications/`);

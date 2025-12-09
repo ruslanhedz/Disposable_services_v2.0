@@ -38,6 +38,7 @@ class CreateSessionView(APIView):
             InstanceType = ""
             SecurityGroup = ""
 
+            # Preparing configuraction for instance
             if (request.data.get('type') == 'browser'):
                 ami = "ami-0b2059e1dc11d7f1a"
                 InstanceType = "c7i-flex.large"
@@ -51,6 +52,7 @@ class CreateSessionView(APIView):
                 InstanceType = "m7i-flex.large"
                 SecurityGroup = "sg-0b0a31fbe3e3cd5e3"
 
+            #launch instance using Boto3
             try:
                 instances = ec2.create_instances(
                     ImageId=ami,
@@ -100,6 +102,7 @@ class CreateSessionView(APIView):
             key = bytes.fromhex(guacamole_key)
             iv = bytes(16)
 
+            #Preparing payload for Guacamole
             if (request.data.get('type') == 'browser'):
                 session_payload = {
                     "username": request.user.username,
@@ -208,7 +211,7 @@ class CreateSessionView(APIView):
 
             expire_session_task.apply_async((obj.id,), eta=obj.dispose_time)
 
-
+            #Preparing access link for user
             session_url = (f"/websocket-tunnel?"
                        f"token={authToken}"
                        f"&GUAC_ID={request.data.get('type')}"
@@ -248,6 +251,7 @@ class OpenSessionView(APIView):
         authToken = session.token
         guac_id = session.session_type
 
+        #Preparing access link for user
         session_url = (
             f"/websocket-tunnel?"
             f"token={authToken}"
@@ -275,11 +279,13 @@ class DeleteSessionView(APIView):
 
         instance = ec2.Instance(instance_id)
 
+        #terminating instance on AWS
         response = instance.terminate()
         #instance.wait_until_terminated()
 
         url = guacamole_tokens + "/" + authToken
 
+        #deleting session on Guacamole
         response = requests.delete(url, verify=False)
 
         if response.status_code in (200, 204):
