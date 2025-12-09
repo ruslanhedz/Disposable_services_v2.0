@@ -53,7 +53,7 @@
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-# This project was created as part of the practical component of the diploma thesis “Creation of a system for launching disposable environments and analysis of the level of isolation and resilience to malicious software” at Wrocław University of Science and Technology.
+# This project was created as part of the practical component of the diploma thesis “Development of disposable environments management system and evaluation of isolation level and malware reliability” at Wrocław University of Science and Technology.
 
 ## Technology stack
 
